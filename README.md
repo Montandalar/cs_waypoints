@@ -42,4 +42,4 @@ usage
 * .wp_search DELTA: searches for saved waypoints near te current location with the given delta for all coordinates
 * .wp_search: searches for saved waypoints near te current location with DELTA=10
     
-
+* .wp_shift AXIS DISTANCE: moves you on the given axis the given distance

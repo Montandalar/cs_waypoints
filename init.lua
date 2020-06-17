@@ -170,6 +170,33 @@ local function  stack_search(d)
    return true
 end
 
+local function  position_shift(p)   
+   local param = p
+   if not p then return end
+   while p:sub(1,1) == " " and p:len()> 3 do
+      p = p:sub(2,99)
+   end
+   if p:len()<3 then return end
+   direction = p:sub(1,1)
+   d = ""
+   if direction == "x" or direction == "X" then d = "x" end 
+   if direction == "y" or direction == "Y" then d = "y" end 
+   if direction == "z" or direction == "Z" then d = "z" end 
+   if d == "" then return end
+
+   here = minetest.localplayer:get_pos()
+
+   distance = tonumber(p:sub(2,8))
+   if not distance then return end
+   if distance == 0 then return end
+   
+   here[d] = here[d] + distance 
+   here.y  = here.y  - 1        -- correction
+
+   minetest.run_server_chatcommand('teleport', tostring_point(here))
+
+end
+
 
 --
 --
@@ -252,8 +279,6 @@ minetest.register_chatcommand('wp_push', {
      }
   )
 
-
-
 minetest.register_chatcommand('tw_pop', {
 	params = '',
 	description = 'return to the last saved position',
@@ -291,5 +316,11 @@ minetest.register_chatcommand('wp_search', {
   )
 
 
-        
+minetest.register_chatcommand('wp_shift', {
+	params = '<axis> <distance>',
+	description = '"shift" the player along the given axis and add the given number',
+	func = position_shift,
+     }
+  )
 
+        
