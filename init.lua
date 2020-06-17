@@ -1,3 +1,7 @@
+
+
+
+
 local mod_name = minetest.get_current_modname()
 
 local function log(level, message)
@@ -9,9 +13,28 @@ log('action', 'CSM loading...')
 local mod_storage = minetest.get_mod_storage()
 
 
+local search_delta_default = 10
+
+--
+--
+-- local functions
+--
+--
+
 local function load_waypoints()
     if string.find(mod_storage:get_string('waypoints'), 'return') then
         return minetest.deserialize(mod_storage:get_string('waypoints'))
+    else
+        return {}
+    end
+end
+
+local function load_waypoints_stack()
+    if string.find(mod_storage:get_string('waypoints_stack'), 'return nil') then
+       return {}
+    end
+    if string.find(mod_storage:get_string('waypoints_stack'), 'return') then
+        return minetest.deserialize(mod_storage:get_string('waypoints_stack'))
     else
         return {}
     end
@@ -36,12 +59,7 @@ end
 
 
 local function round(x)
-    -- approved by kahan
---    if x % 2 ~= 0.5 then
-        return math.floor(x+0.5)
---    else
---        return x - 0.5
---    end
+   return math.floor(x+0.5)
 end
 
 
@@ -71,6 +89,93 @@ end
 local function tostring_point(point)
     return ('%i %i.5 %i'):format(round(point.x), round(point.y), round(point.z))
 end
+
+
+
+
+local function teleport_to(position_name)
+   local wpname = position_name
+   local waypoint = waypoints[wpname]
+   if waypoint ~= nil then
+      minetest.run_server_chatcommand('teleport', tostring_point(waypoint))
+   else
+      minetest.display_chat_message(('waypoint "%s" not found.'):format(wpname))
+   end
+   return true
+end
+
+
+
+local function stack_push()
+   local point = minetest.localplayer:get_pos()
+   wp_stack = load_waypoints_stack()
+   count = #wp_stack +1
+   wp_stack[count] = point
+   mod_storage:set_string('waypoints_stack', minetest.serialize(wp_stack))
+end
+
+local function stack_pop()
+   wp_stack = load_waypoints_stack()
+   count = 0
+   if nil ~= wp_stack then count = #wp_stack end
+   if count<1 then
+      minetest.display_chat_message('stack empty - no teleporting')
+      return
+   end
+   minetest.run_server_chatcommand('teleport', tostring_point(wp_stack[count]))
+   wp_stack[count] = nil
+   mod_storage:set_string('waypoints_stack', minetest.serialize(wp_stack))
+   return true   
+end
+
+local function stack_show()
+   wp_stack = load_waypoints_stack()
+   count = 0
+   if nil ~= wp_stack then count = #wp_stack end
+   if count<1 then
+      minetest.display_chat_message('stack empty')
+      return true
+   end
+   output = ""
+   for i = count,1,-1 do
+      output = output .. tostring(i) .. "  " ..  tostring_point(wp_stack[i]).."\n"
+   end
+   return true ,output
+end
+
+local function stack_clear()
+   mod_storage:set_string('waypoints_stack', minetest.serialize(nil))
+end
+
+local function  stack_search(d)   
+   local delta = d
+   if delta then       delta = tonumber(delta) end
+   if nil == delta then delta = search_delta_default  end 
+   if delta < 0 then delta = 0 end
+   
+   here = minetest.localplayer:get_pos()
+   minetest.display_chat_message(
+                ('%s : %s'):format("current position", tostring_point(here))
+            )
+   for name,pos in pairsByKeys(waypoints, lc_cmp) do
+      if math.abs(here.y-pos.y) <= delta then
+	 if math.abs(here.x-pos.x) <= delta then
+	    if math.abs(here.z-pos.z) <= delta then
+	       minetest.display_chat_message(
+		     ('%s -> %s'):format(name, tostring_point(pos)))
+	    end
+	 end
+      end
+   end
+   return true
+end
+
+
+--
+--
+-- chat commands
+--
+--
 
 
 minetest.register_chatcommand('wp_set', {
@@ -118,59 +223,73 @@ minetest.register_chatcommand('wp_list', {
 
 
 minetest.register_chatcommand('tw', {
-    params = '(<playernamename>) <waypoint>',
-    description = 'teleport (a player) to a waypoint',
-    func = safe(function(param)
---        local playername, wpname = string.match(param, '^(%S+)%s+(%S+)$')
---        if playername and wpname then
---            local waypoint = waypoints[wpname]
---            if waypoint ~= nil then
---                local args = ('%s %s'):format(playername, tostring_point(waypoint))
---                minetest.run_server_chatcommand('teleport', args)
---            else
---                minetest.display_chat_message(('waypoint "%s" not found.'):format(wpname))
---            end
---        else
-            local wpname = param
-            local waypoint = waypoints[wpname]
-            if waypoint ~= nil then
-                minetest.run_server_chatcommand('teleport', tostring_point(waypoint))
-            else
-                minetest.display_chat_message(('waypoint "%s" not found.'):format(wpname))
-            end
---        end
-
-    end),
-})
+	params = '<waypoint>',
+	description = 'teleport to a waypoint',
+	func = safe(function(param)
+		       safe(teleport_to(param))
+		    end),
+     }
+  )
 
 
+minetest.register_chatcommand('tw_push', {
+	params = '<waypoint>',
+	description = 'teleport to a waypoint and save old position',
+	func = safe(function(param)
+		       stack_push()
+		       safe(teleport_to(param))
+		    end),
+     }
+  )
 
--- 
--- 2019-07-11 Och_Noe   disabled
--- random teleporting is too dangerous
--- 
--- minetest.register_chatcommand('tr', {
---     params = '<ELEV> | <PLAYER> | <PLAYER> <ELEV>',
---     description = '/teleport (a player) to a random location',
---     func = safe(function(param)
---         local x = math.random(-30912, 30927)
---         local y = math.random(-30912, 30927)
---         local z = math.random(-30912, 30927)
---         local name = ''
--- 
---         if string.match(param, '^([%a%d_-]+) (%d+)$') ~= nil then
---             name, y = string.match(param, "^([%a%d_-]+) (%d+)$")
--- 
---         elseif string.match(param, '^([%d-]+)$') then
---             y = string.match(param, '^([%d-]+)$')
--- 
---         elseif string.match(param, '^([%a%d_-]+)$') ~= nil then
---             name = string.match(param, '^([%a%d_-]+)$')
---         end
--- 
---         local args = ('%s %s %s %s'):format(name, x, y, z)
---         minetest.run_server_chatcommand('teleport', args)
---     end),
--- })
+minetest.register_chatcommand('wp_push', {
+	params = '<position/player>',
+	description = 'teleport to a position/player and save old position',
+	func = safe(function(param)
+		       stack_push()
+		       minetest.run_server_chatcommand('teleport', param)
+		    end),
+     }
+  )
 
+
+
+minetest.register_chatcommand('tw_pop', {
+	params = '',
+	description = 'return to the last saved position',
+	func = stack_pop,
+     }
+  )
+
+minetest.register_chatcommand('wp_pop', {
+	params = '',
+	description = 'return to the last saved position',
+	func = stack_pop,
+     }
+  )
+
+minetest.register_chatcommand('wp_stack', {
+	params = '',
+	description = 'shows the stack content',
+	func = stack_show,
+     }
+  )
+
+minetest.register_chatcommand('wp_stack_clear', {
+	params = '',
+	description = 'clears the position stack',
+	func = stack_clear,
+     }
+  )
+
+
+minetest.register_chatcommand('wp_search', {
+	params = '(<delta>)',
+	description = 'search a waypoint near the current position',
+	func = stack_search,
+     }
+  )
+
+
+        
 
