@@ -43,3 +43,5 @@ usage
 * .wp_search: searches for saved waypoints near te current location with DELTA=10
     
 * .wp_shift AXIS DISTANCE: moves you on the given axis the given distance
+
+* .wp_grep NAME:  search for NAME in the waypoint names

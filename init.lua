@@ -324,3 +324,26 @@ minetest.register_chatcommand('wp_shift', {
   )
 
         
+
+--  wp_grep    written by erstazi (player at Linux-Forks.de )
+minetest.register_chatcommand('wp_grep', {
+    params = '<name>',
+    description = 'lists waypoints',
+    func = safe(function(param)
+        local wpname = param
+        local count = 0
+        for name, point in pairsByKeys(waypoints, lc_cmp) do
+            if string.find(name, wpname) then
+                count = count + 1
+                minetest.display_chat_message(
+                    ('%s -> %s'):format(name, tostring_point(point))
+                )
+            end
+        end
+
+        if count == 0 then
+            minetest.display_chat_message(('waypoint "%s" not found.'):format(wpname))
+        end
+    end),
+})
+
