@@ -8,7 +8,7 @@ local function log(level, message)
     minetest.log(level, ('[%s] %s'):format(mod_name, message))
 end
 
-log('action', 'CSM loading...')
+log('action', 'CSM cs_waypoints loading...')
 
 local mod_storage = minetest.get_mod_storage()
 
@@ -104,6 +104,18 @@ local function teleport_to(position_name)
    return true
 end
 
+local function show_pos(position_name)
+   local wpname = position_name
+   local waypoint = waypoints[wpname]
+   local rg = ""
+   if waypoint ~= nil then
+      rg = wpname .. ": " .. tostring_point(waypoint)
+   else
+      rg = ('waypoint "%s" not found.'):format(wpname)
+   end
+   return true,rg
+end
+
 
 
 local function stack_push()
@@ -170,7 +182,7 @@ local function  stack_search(d)
    return true
 end
 
-local function  position_shift(p)   
+local function position_shift(p)   
    local param = p
    if not p then return end
    while p:sub(1,1) == " " and p:len()> 3 do
@@ -195,6 +207,32 @@ local function  position_shift(p)
 
    minetest.run_server_chatcommand('teleport', tostring_point(here))
 
+end
+
+
+local function calc_distance(wp)
+   local wpname = wp
+   local waypoint = waypoints[wpname]
+   local rg = ""
+   if waypoint == nil then
+      rg = ('waypoint "%s" not found.'):format(wp)
+   else
+      here = minetest.localplayer:get_pos()
+      dx = math.abs(here.x-waypoint.x)
+      dy = math.abs(here.y-waypoint.y)
+      dz = math.abs(here.z-waypoint.z)
+      l1 = "x: " .. tostring(round(100*dx)/100) .. "   y: " 
+	 .. tostring(round(100*dy)/100) .. "   z: " 
+	 .. tostring(round(100*dz)/100)
+      delta_hor = math.floor(math.sqrt(dx*dx+dz*dz)*100)/100
+      delta_3d =  math.floor(math.sqrt(dx*dx+dy*dy+dz*dz)*100)/100
+      l2 = "distance: " .. tostring(delta_3d) 
+	 .. "    horizontal distance: " .. tostring(delta_hor) 
+      rg = l1 .. "\n" .. l2
+   end
+
+
+   return true,rg
 end
 
 
@@ -269,15 +307,15 @@ minetest.register_chatcommand('tw_push', {
      }
   )
 
-minetest.register_chatcommand('wp_push', {
-	params = '<position/player>',
-	description = 'teleport to a position/player and save old position',
-	func = safe(function(param)
-		       stack_push()
-		       minetest.run_server_chatcommand('teleport', param)
-		    end),
-     }
-  )
+-- minetest.register_chatcommand('wp_push', {
+-- 	params = '<position/player>',
+-- 	description = 'teleport to a position/player and save old position',
+-- 	func = safe(function(param)
+-- 		       stack_push()
+-- 		       minetest.run_server_chatcommand('teleport', param)
+-- 		    end),
+--      }
+--   )
 
 minetest.register_chatcommand('tw_pop', {
 	params = '',
@@ -286,12 +324,6 @@ minetest.register_chatcommand('tw_pop', {
      }
   )
 
-minetest.register_chatcommand('wp_pop', {
-	params = '',
-	description = 'return to the last saved position',
-	func = stack_pop,
-     }
-  )
 
 minetest.register_chatcommand('wp_stack', {
 	params = '',
@@ -323,6 +355,21 @@ minetest.register_chatcommand('wp_shift', {
      }
   )
 
+
+minetest.register_chatcommand('wp_dist', {
+	params = '<waypoint>',
+	description = 'calculate the distance to a given waypoint',
+	func = calc_distance,
+     }
+  )
+        
+
+minetest.register_chatcommand('wp_show', {
+	params = '<waypoint>',
+	description = 'show the coordinates of a given waypoint',
+	func = show_pos,
+     }
+  )
         
 
 --  wp_grep    written by erstazi (player at Linux-Forks.de )
