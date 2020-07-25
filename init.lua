@@ -10,6 +10,8 @@ end
 
 log('action', 'CSM cs_waypoints loading...')
 
+minetest.display_chat_message("CSM cs_waypoints loading...")
+
 local mod_storage = minetest.get_mod_storage()
 
 
@@ -209,6 +211,52 @@ local function position_shift(p)
 
 end
 
+-- new shift with more than one possible shift coordinate
+-- only the last value for one coordinate is used
+local function position_shift2(p)   
+   if not p then return end
+
+   param = p:split(" ")
+
+   shift = {}
+   shift.x = 0
+   shift.y = 0
+   shift.z = 0
+
+   vp = 1
+   while (vp+1 <= #param )
+   do
+      direction = param[vp]
+      d = ""
+      if direction == "x" or direction == "X" then d = "x" end 
+      if direction == "y" or direction == "Y" then d = "y" end 
+      if direction == "z" or direction == "Z" then d = "z" end 
+      if d ~= "" then 
+	 distance = tonumber(param[vp+1])
+	 if not distance then 
+	    distance = 0
+	 end
+	 shift[direction] = distance
+      end
+      vp = vp+2
+   end
+
+   if shift.x == 0 and shift.y == 0 and shift.z == 0 then
+      return
+   end
+
+   here = minetest.localplayer:get_pos()
+
+   here.x = here.x+shift.x
+   here.y = here.y+shift.y
+   here.z = here.z+shift.z
+
+   here.y  = here.y  - 1        -- correction
+
+   minetest.run_server_chatcommand('teleport', tostring_point(here))
+
+end
+
 
 local function calc_distance(wp)
    local wpname = wp
@@ -351,7 +399,7 @@ minetest.register_chatcommand('wp_search', {
 minetest.register_chatcommand('wp_shift', {
 	params = '<axis> <distance>',
 	description = '"shift" the player along the given axis and add the given number',
-	func = position_shift,
+	func = position_shift2,
      }
   )
 
