@@ -355,15 +355,15 @@ minetest.register_chatcommand('tw_push', {
      }
   )
 
--- minetest.register_chatcommand('wp_push', {
--- 	params = '<position/player>',
--- 	description = 'teleport to a position/player and save old position',
--- 	func = safe(function(param)
--- 		       stack_push()
--- 		       minetest.run_server_chatcommand('teleport', param)
--- 		    end),
---      }
---   )
+minetest.register_chatcommand('wp_push', {
+	params = '<position/player>',
+	description = 'teleport to a position/player and save old position',
+	func = safe(function(param)
+		       stack_push()
+		       minetest.run_server_chatcommand('teleport', param)
+		    end),
+      }
+   )
 
 minetest.register_chatcommand('tw_pop', {
 	params = '',
@@ -372,6 +372,12 @@ minetest.register_chatcommand('tw_pop', {
      }
   )
 
+minetest.register_chatcommand('wp_pop', {
+	params = '',
+	description = 'return to the last saved position',
+	func = stack_pop,
+     }
+  )
 
 minetest.register_chatcommand('wp_stack', {
 	params = '',
