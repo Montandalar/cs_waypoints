@@ -4,11 +4,13 @@
 
 local mod_name = minetest.get_current_modname()
 
+local mod_version = "2.5"
+
 local function log(level, message)
     minetest.log(level, ('[%s] %s'):format(mod_name, message))
 end
 
-log('action', 'CSM cs_waypoints loading...')
+log('action', 'CSM cs_waypoints '..mod_version..' loading...')
 
 minetest.display_chat_message("CSM cs_waypoints loading...")
 
@@ -139,6 +141,18 @@ local function stack_pop()
    minetest.run_server_chatcommand('teleport', tostring_point(wp_stack[count]))
    wp_stack[count] = nil
    mod_storage:set_string('waypoints_stack', minetest.serialize(wp_stack))
+   return true   
+end
+
+local function stack_use()
+   wp_stack = load_waypoints_stack()
+   count = 0
+   if nil ~= wp_stack then count = #wp_stack end
+   if count<1 then
+      minetest.display_chat_message('stack empty - no teleporting')
+      return
+   end
+   minetest.run_server_chatcommand('teleport', tostring_point(wp_stack[count]))
    return true   
 end
 
@@ -376,6 +390,20 @@ minetest.register_chatcommand('wp_pop', {
 	params = '',
 	description = 'return to the last saved position',
 	func = stack_pop,
+     }
+  )
+
+minetest.register_chatcommand('tw_use', {
+	params = '',
+	description = "use the last saved position but don't remove it",
+	func = stack_use,
+     }
+  )
+
+minetest.register_chatcommand('wp_use', {
+	params = '',
+	description = "use the last saved position but don't remove it",
+	func = stack_use,
      }
   )
 
