@@ -12,7 +12,7 @@ end
 
 log('action', 'CSM cs_waypoints '..mod_version..' loading...')
 
-minetest.display_chat_message("CSM cs_waypoints loading...")
+minetest.display_chat_message("CSM cs_waypoints '..mod_version..' loading...")
 
 local mod_storage = minetest.get_mod_storage()
 
@@ -155,6 +155,22 @@ local function stack_use()
    minetest.run_server_chatcommand('teleport', tostring_point(wp_stack[count]))
    return true   
 end
+
+local function stack_exch()
+   wp_stack = load_waypoints_stack()
+   count = 0
+   if nil ~= wp_stack then count = #wp_stack end
+   if count<2 then
+      minetest.display_chat_message('less than 2 entries - no change')
+      return
+   end
+   local exch        = wp_stack[count]
+   wp_stack[count]   = wp_stack[count-1]
+   wp_stack[count-1] = exch
+   mod_storage:set_string('waypoints_stack', minetest.serialize(wp_stack))
+   return true   
+end
+
 
 local function stack_show()
    wp_stack = load_waypoints_stack()
@@ -407,6 +423,19 @@ minetest.register_chatcommand('wp_use', {
      }
   )
 
+minetest.register_chatcommand('tw_exch', {
+	params = '',
+	description = 'exchange the top two stack entried',
+	func = stack_exch,
+     }
+  )
+
+minetest.register_chatcommand('wp_exch', {
+	params = '',
+	description = 'exchange the top two stack entried',
+	func = stack_exch,
+     }
+  )
 minetest.register_chatcommand('wp_stack', {
 	params = '',
 	description = 'shows the stack content',
