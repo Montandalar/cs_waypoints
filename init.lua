@@ -481,6 +481,16 @@ minetest.register_chatcommand('wp_show', {
 	func = show_pos,
      }
   )
+
+
+minetest.register_chatcommand('tp', {
+	params = '<position/player>',
+	description = 'shortcut for /teleport',
+	func = safe(function(param)
+		       safe(minetest.run_server_chatcommand('teleport',param ))
+		    end),
+     }
+  )
         
 
 --  wp_grep    written by erstazi (player at Linux-Forks.de )
