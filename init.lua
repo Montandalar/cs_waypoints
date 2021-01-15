@@ -366,14 +366,48 @@ minetest.register_chatcommand('wp_list', {
 
 
 minetest.register_chatcommand('tw', {
-	params = '<waypoint>',
-	description = 'teleport to a waypoint',
-	func = safe(function(param)
-		       safe(teleport_to(param))
-		    end),
-     }
+    params = '[playername] <waypoint>',
+    description = 'teleport (a player) to a waypoint',
+    func = safe(function(param)
+        local playername, wpname = string.match(param, '^(%S+)%s+(%S+)$')
+        if playername and wpname then
+            local waypoint = waypoints[wpname]
+            if waypoint ~= nil then
+                local args = ('%s %s'):format(playername, tostring_point(waypoint))
+                minetest.run_server_chatcommand('teleport', args)
+            else
+                minetest.display_chat_message(('waypoint "%s" not found.'):format(wpname))
+            end
+        else
+            safe(teleport_to(param))
+        end
+    end
   )
+})
 
+minetest.register_chatcommand('tr', {
+    params = '<ELEV> | <PLAYER> | <PLAYER> <ELEV>',
+    description = '/teleport (a player) to a random location',
+    func = safe(function(param)
+        local x = math.random(-30912, 30927)
+        local y = math.random(-30912, 30927)
+        local z = math.random(-30912, 30927)
+        local name = ''
+
+        if string.match(param, '^([%a%d_-]+) (%d+)$') ~= nil then
+            name, y = string.match(param, "^([%a%d_-]+) (%d+)$")
+
+        elseif string.match(param, '^([%d-]+)$') then
+            y = string.match(param, '^([%d-]+)$')
+
+        elseif string.match(param, '^([%a%d_-]+)$') ~= nil then
+            name = string.match(param, '^([%a%d_-]+)$')
+        end
+
+        local args = ('%s %s %s %s'):format(name, x, y, z)
+        minetest.run_server_chatcommand('teleport', args)
+    end),
+})
 
 minetest.register_chatcommand('tw_push', {
 	params = '<waypoint>',

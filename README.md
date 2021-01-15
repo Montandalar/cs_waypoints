@@ -32,6 +32,9 @@ usage
 * .wp_unset NAME: remove a waypoint
 * .wp_list: list all waypoints
 * .tw NAME: teleport to a waypoint
+* .tw PLAYERNAME WAYPOINT_NAME: teleport another player to a waypoint
+* .tr: teleport to a random location
+* .tr ELEVATION: teleport to a random location at a given elevation (y value)
 
 * .tw_push NAME: teleport to a waypoint and save current location
 * .wp_push PLAYER/POSITION: teleport to a player or position and save current location
