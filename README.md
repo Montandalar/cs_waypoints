@@ -1,5 +1,9 @@
 minetest CSM which implements waypoints on top of the /teleport server side command.
 
+Based on https://github.com/fluxionary/minetest-cs_waypoints
+and new developement by Och_Noe (LinuxForks) at
+https://git.bananach.space/cs_waypoints.git/
+
 requirements
 ------------
 
